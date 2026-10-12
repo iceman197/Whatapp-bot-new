@@ -124,43 +124,61 @@ app.get(
 );
 
 // WhatsApp pairing.
+// Accepts valid international numbers, including the owner number.
+// The request must still pass admin-token authentication.
 app.post(
   "/api/admin/pair",
   adminRateLimit,
   requireAdmin,
   async (req, res) => {
-    const number = normalizeNumber(req.body?.phoneNumber);
+    const rawNumber = req.body?.phoneNumber;
+
+    if (
+      typeof rawNumber !== "string" &&
+      typeof rawNumber !== "number"
+    ) {
+      return res.status(400).json({
+        ok: false,
+        error: "Enter an international phone number with country code."
+      });
+    }
+
+    const number = normalizeNumber(String(rawNumber));
 
     if (!/^\d{8,15}$/.test(number)) {
       return res.status(400).json({
         ok: false,
-        error: "Enter a valid international number with country code."
-      });
-    }
-
-    if (
-      number !== normalizeNumber(process.env.OWNER_NUMBER || "")
-    ) {
-      return res.status(403).json({
-        ok: false,
-        error: "Pairing is restricted to the configured owner number."
+        error:
+          "Invalid number. Use 8 to 15 digits, including the country code, without the plus sign."
       });
     }
 
     try {
       const result = await startWhatsApp(number);
 
-      res.json({
+      if (!result || !result.code) {
+        return res.status(503).json({
+          ok: false,
+          error:
+            "The WhatsApp service did not return a pairing code. Check the connection and server logs."
+        });
+      }
+
+      return res.json({
         ok: true,
         pairingCode: result.code,
         whatsapp: getStatus()
       });
     } catch (error) {
-      console.error("Pairing request failed:", error.message);
+      console.error(
+        "Pairing request failed:",
+        error.message
+      );
 
-      res.status(500).json({
+      return res.status(500).json({
         ok: false,
-        error: "Could not request a pairing code. Check server logs."
+        error:
+          "Could not request a pairing code. Check the server logs."
       });
     }
   }
@@ -177,7 +195,12 @@ app.post(
         ok: true,
         whatsapp: await disconnectWhatsApp()
       });
-    } catch {
+    } catch (error) {
+      console.error(
+        "Disconnect failed:",
+        error.message
+      );
+
       res.status(500).json({
         ok: false,
         error: "Disconnect failed."
@@ -210,7 +233,10 @@ app.post(
       next.geminiApiKey = "";
     }
 
-    if (body.mode === "public" || body.mode === "private") {
+    if (
+      body.mode === "public" ||
+      body.mode === "private"
+    ) {
       next.mode = body.mode;
     }
 
@@ -248,6 +274,7 @@ startExistingSession().catch(error => {
 const port = Number(process.env.PORT || 3000);
 
 app.listen(port, "0.0.0.0", () => {
-  console.log(`ICEMAN BOT listening on port ${port}`);
+  console.log(
+    `ICEMAN BOT listening on port ${port}`
+  );
 });
-    
