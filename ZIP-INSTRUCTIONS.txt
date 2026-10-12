@@ -1,0 +1,14 @@
+ICEMAN BOT ZIP — QUICK START
+
+1. Extract the ZIP.
+2. Keep the folder structure intact.
+3. Read README.md before deploying.
+4. Do not upload .env, data/auth_info_baileys, data/settings.json, API keys, or pairing codes.
+5. Upload the project files to GitHub, then connect the repository to Render.
+6. Set ADMIN_TOKEN in Render Environment variables. Use a random secret at least 24 characters long.
+7. Confirm persistent disk is mounted at /var/data and DATA_DIR=/var/data.
+8. Deploy and check /api/health.
+9. Open the dashboard, enter your admin token, and request pairing only for OWNER_NUMBER.
+10. Test basic commands, then configure Gemini only if desired.
+
+The included public/index.html is a standalone dashboard larger than 99 KB. Its controls call the backend API; they are not a static mockup. No live WhatsApp pairing or hosted deployment has been tested during ZIP creation.
